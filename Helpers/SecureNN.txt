@@ -1,0 +1,29 @@
+
+# Step-by-step commands to build and run SecureNN in MP-SPDZ
+
+1.
+Add -DINSECURE at the end of CFLAGS in config
+
+2. Clean previous builds
+make clean
+
+3. Build the replicated-ring-party 
+make replicated-ring-party.x 
+
+4. Compile the SecureNN program 
+./compile.py -R 64 SecureNN
+
+5. 
+python3 generate_inputs_securenn.py
+
+6. Run the 3-party protocol
+./replicated-ring-party.x -v --unencrypted 0 SecureNN & ./replicated-ring-party.x -v --unencrypted 1 SecureNN & ./replicated-ring-party.x -v --unencrypted 2 SecureNN 
+
+
+
+
+
+
+
+
+

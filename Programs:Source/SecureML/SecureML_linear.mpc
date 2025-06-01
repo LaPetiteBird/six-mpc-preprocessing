@@ -1,0 +1,58 @@
+from Compiler.types import sfix, Matrix
+from Compiler.library import print_ln, for_range
+
+# settings for math 
+sfix.round_nearest = True
+sfix.set_precision(16, 32)  
+
+# config
+n = 100    # rows
+d = 10     # columns / features
+B = 20     # mini batch size 
+epochs = 5
+alpha = sfix(0.01)  # learning rate
+
+# party 0 gives the data
+X = Matrix(n, d, sfix)
+Y = Matrix(n, 1, sfix)
+X.input_from(0)
+Y.input_from(0)
+
+# weights start at zero
+W = Matrix(d, 1, sfix)
+W.assign_all(0)
+
+@for_range(epochs)
+def epoch_loop(epnum):  # one epoch
+    @for_range(n // B)
+    def batch_loop(b):  # one batch
+        # get part of the data
+        xb = Matrix(B, d, sfix)
+        yb = Matrix(B, 1, sfix)
+        xb.assign(X.get_part(b * B, B))
+        yb.assign(Y.get_part(b * B, B))
+
+        # do prediction
+        yhat = xb * W
+
+        # calc error
+        err = yhat - yb
+
+        # gradient math
+        grad = xb.transpose() * err
+
+        # small step
+        tiny = alpha / B
+
+        # multiply grad by step
+        step = Matrix(d, 1, sfix)
+        @for_range(d)
+        def step_loop(i):
+            step[i][0] = grad[i][0] * tiny
+
+        # update weights 
+        W.assign(W - step)
+
+# show final result
+print_ln("Final trained weight vector:")
+W.print_reveal_nested()

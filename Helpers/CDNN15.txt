@@ -1,0 +1,15 @@
+
+         
+1.  
+mkdir -p Player-Data
+python3 generate_inputs_cdnn15.py
+
+
+2. Compilation
+make mascot-party.x   
+./compile.py -F 64 cdnn15
+
+3. Run the protocol 
+./mascot-party.x -v -N 2 -p 0 cdnn15 & ./mascot-party.x -v -N 2 -p 1 cdnn15
+
+

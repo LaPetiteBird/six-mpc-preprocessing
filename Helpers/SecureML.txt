@@ -1,0 +1,28 @@
+
+
+
+1. Generate private inputs for each demo of your choice
+
+python3 generate_inputs_secureml.py linear   --seed 42
+python3 generate_inputs_secureml.py logistic --seed 42
+python3 generate_inputs_secureml.py neural   --seed 42
+
+2.Compile the SecureML program of your choice
+make mascot-party.x   
+./compile.py SecureML/secureml_linear
+./compile.py SecureML/secureml_logistic
+./compile.py SecureML/secureml_neural
+
+3.Run the model of your choice 
+
+./mascot-party.x -v -N 2 -p 0 secureml_linear &
+./mascot-party.x -v -N 2 -p 1 secureml_linear
+
+
+./mascot-party.x -v -N 2 -p 0 secureml_logistic &
+./mascot-party.x -v -N 2 -p 1 secureml_logistic
+
+./mascot-party.x -v -N 2 -p 0 secureml_neural &
+./mascot-party.x -v -N 2 -p 1 secureml_neural
+
+

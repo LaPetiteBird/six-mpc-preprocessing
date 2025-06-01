@@ -1,0 +1,25 @@
+from Compiler.types import sfix
+from Compiler.library import print_ln, for_range
+
+# Matrix dimensions: A ∈ [ROWS × INNER], B ∈ [INNER × COLS]
+ROWS = 64
+INNER = 128
+COLS = 32
+
+# Secret-shared matrix inputs
+A = sfix.Matrix(ROWS, INNER)
+B = sfix.Matrix(INNER, COLS)
+
+A.input_from(0)   # Party 0 inputs A
+B.input_from(1)   # Party 1 inputs B
+
+# Compute matrix product
+C = A.dot(B)
+
+# Reveal the result (partial for sanity)
+print_ln("Secure matrix product (partial output)")
+@for_range(min(ROWS, 5))
+def show_rows(i):
+    @for_range(min(COLS, 5))
+    def show_cols(j):
+        print_ln("C[%s][%s] = %s", i, j, C[i][j].reveal())

@@ -1,0 +1,66 @@
+from Compiler.types import sfix, Matrix
+from Compiler.library import print_ln, for_range
+
+sfix.set_precision(16, 32)
+
+# config stuff
+n = 100   # samples
+d = 10    # features
+B = 20    # batch size
+epochs = 5
+alpha = sfix(0.01)  # learning rate 
+
+# grab data from party 0
+X = Matrix(n, d, sfix)
+Y = Matrix(n, 1, sfix)
+X.input_from(0)
+Y.input_from(0)
+
+# start weights at zero, hope they get better
+W = Matrix(d, 1, sfix)
+W.assign_all(0)
+
+# fake sigmoid thing from the paper
+def kinda_sigmoid(x):
+    low = x < sfix(-0.5)     # is it small?
+    high = x > sfix(0.5)     # is it big?
+    mid = x + sfix(0.5)
+
+    # return 0, mid, or 1 depending where x is
+    return sfix(low) * sfix(0) + (sfix(1) - sfix(low) - sfix(high)) * mid + sfix(high) * sfix(1)
+
+@for_range(epochs)
+def train_loop(ep):
+    @for_range(n // B)
+    def batch_loop(b):
+        # slice batch
+        x_b = Matrix(B, d, sfix)
+        y_b = Matrix(B, 1, sfix)
+        x_b.assign(X.get_part(b * B, B))
+        y_b.assign(Y.get_part(b * B, B))
+
+        # forward pass (kinda)
+        logits = x_b * W
+        preds = Matrix(B, 1, sfix)
+        @for_range(B)
+        def apply_activation(i):
+            preds[i][0] = kinda_sigmoid(logits[i][0])
+
+        # compute how off we were
+        err = preds - y_b
+
+        # basic gradient thing
+        grad = x_b.transpose() * err
+        step = Matrix(d, 1, sfix)
+        scalar = alpha / B
+
+        @for_range(d)
+        def scale_grad(i):
+            step[i][0] = grad[i][0] * scalar
+
+        # update weights go go go
+        W.assign(W - step)
+
+# done
+print_ln("Final trained logistic weights:")
+W.print_reveal_nested()

@@ -1,0 +1,76 @@
+from Compiler.types import sfix, sint, Matrix
+from Compiler.library import print_ln, for_range
+
+
+sfix.round_nearest = True
+sfix.set_precision(16, 31)
+
+
+def make_identity(n): 
+    ident = Matrix(n,n,sfix)
+    for i in range(n):
+        for j in range(n): 
+            ident[i][j] = sfix(1) if i == j else sfix(0)
+    return ident
+
+
+def invert_matrix(A, steps=6):
+    sz = A.sizes[0]
+
+    def put_diagonal(val):
+        mat = Matrix(sz, sz, sfix)
+        @for_range(sz)
+        def loop_i(i): 
+            mat[i][i] = val
+        return mat
+
+    tr = sfix(0)
+    for i in range(sz): tr += A[i][i]
+    tr += sfix(0.0001)
+    inv = sfix(1) / tr
+
+    X = put_diagonal(inv)
+    TWO = put_diagonal(sfix(2))
+
+    for whatever in range(steps): 
+        X = X * (TWO - A * X)
+
+    return X
+
+
+n = 20
+m=5
+X = Matrix(n, m, sfix)   
+y = sfix.Array(n)
+
+
+for p in range(2):
+    xstuff = Matrix(n, m, sint)
+    xstuff.input_from(p)
+
+    ystuff = sint.Array(n)
+    ystuff.input_from(p)
+
+    if p == 0:
+        @for_range(n)
+        def fill0(i):
+            y[i] = sfix(ystuff[i])
+            @for_range(m)
+            def fillcols(j): X[i][j] = sfix(xstuff[i][j])
+    else:
+        @for_range(n)
+        def fill1(i):
+            y[i] += sfix(ystuff[i])
+            @for_range(m)
+            def pluscols(j): X[i][j] += sfix(xstuff[i][j])
+
+
+Xt   = X.transpose()
+XtX  = Xt * X
+Xty  = Xt * y
+beta = invert_matrix(XtX) * Xty
+
+
+print_ln("Estimated coefficients (beta):")
+for i in range(m): 
+    print_ln("beta[%s] = %s", i, beta[i].reveal())

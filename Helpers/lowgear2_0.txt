@@ -1,0 +1,11 @@
+
+1. 
+make clean
+make lowgear-party.x
+
+2. 
+./compile.py -F 64 lowgear20
+
+python3 generate_inputs_lowgear2_0.py
+
+Scripts/lowgear.sh -v lowgear20

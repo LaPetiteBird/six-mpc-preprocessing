@@ -1,0 +1,18 @@
+
+
+1. 
+make clean
+
+2. 
+make semi-party.x
+
+3.
+./compile.py -F 64 ckrrsw20
+
+4. 
+python3 generate_inputs_ckrrsw20.py 32 42
+size and seed respectively, if you want to change the dimentions, you can do that in the .mpc file. 
+
+
+5.
+./semi-party.x -N 2 0 ckrrsw20 & ./semi-party.x -N 2 1 ckrrsw20 

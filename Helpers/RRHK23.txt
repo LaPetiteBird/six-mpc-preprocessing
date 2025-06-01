@@ -1,0 +1,14 @@
+How to run RRHK23
+
+1.
+make clean
+make lowgear-party.x
+
+2. 
+python3 generate_inputs_rrhk23.py
+
+3. 
+./compile.py -R 64 RRHK23
+
+4.
+./lowgear-party.x -v -N 2 0 RRHK23 & ./lowgear-party.x -v -N 2 1 RRHK23

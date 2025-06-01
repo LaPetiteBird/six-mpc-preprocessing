@@ -1,0 +1,119 @@
+# SecureNN_legacy_but_messy.mpc
+from Compiler.library import *
+from Compiler import floatingpoint as fp
+
+# -------- helper zone --------
+
+def is_matrix(x):       
+    return hasattr(x, 'sizes')  # matrix or nah
+
+def copy_shape_like(M): 
+    return sfix.Matrix(*M.sizes)
+
+# do something to every element (1 input)
+def do_to_each(f, A):
+    if not is_matrix(A):
+        return f(A)
+    R, C = A.sizes
+    result = copy_shape_like(A)
+    @for_range(R)
+    def row(i):
+        @for_range(C)
+        def col(j):
+            result[i][j] = f(A[i][j])
+    return result
+
+# do something to every element (2 inputs)
+def do_pairwise(g, A, B):
+    if not is_matrix(A):
+        return g(A, B)
+    R, C = A.sizes
+    out = copy_shape_like(A)
+    @for_range(R)
+    def i(i):
+        @for_range(C)
+        def j(j):
+            out[i][j] = g(A[i][j], B[i][j])
+    return out
+
+# scale a matrix by a number
+mul_scalar = lambda M, c: do_to_each(lambda z: z * c, M)
+
+# activations
+drelu_scalar = lambda x: (x < sfix(0)).if_else(sfix(0), sfix(1))
+drelu = lambda A: do_to_each(drelu_scalar, A)
+
+relu = lambda A: do_pairwise(lambda a, m: a * m, A, drelu(A))
+matmul = lambda A, B: A * B  # it's just *
+
+def softmax_but_basic(M):
+    R, C = M.sizes
+    out = copy_shape_like(M)
+    @for_range(R)
+    def row(i):
+        total = Array(1, sfix)
+        total[0] = sfix(0)
+        @for_range(C)
+        def col(j):
+            total[0] += M[i][j]
+        inv = sfix(1) / total[0]
+        @for_range(C)
+        def norm(j):
+            out[i][j] = M[i][j] * inv
+    return out
+
+def mse(A, B):  # mean square error thing
+    R, C = A.sizes
+    total = Array(1, sfix); total[0] = sfix(0)
+    @for_range(R)
+    def r(i):
+        @for_range(C)
+        def c(j):
+            diff = A[i][j] - B[i][j]
+            total[0] += diff * diff
+    return total[0] / (R * C)
+
+# network shape & weights 
+
+IN, H, OUT = 784, 128, 10
+BATCH = 128
+sfix.set_precision(16, 31)
+
+W1 = sfix.Matrix(IN, H);   W1.randomize(-0.1, 0.1)
+W2 = sfix.Matrix(H, OUT);  W2.randomize(-0.1, 0.1)
+
+def forward_pass(x):
+    h = relu(matmul(x, W1))
+    logits = matmul(h, W2)
+    probs = softmax_but_basic(logits)
+    return probs, h, logits
+
+#  training loop (fake SGD) 
+
+@for_range(10)  # not real epochs, just enough to benchmark
+def training_step(not_used):
+    x = sfix.Matrix(BATCH, IN)
+    y = sfix.Matrix(BATCH, OUT)  # one-hot
+
+    x.input_from(0)
+    y.input_from(0)
+
+    probs, h1, logits = forward_pass(x)
+    loss = mse(probs, y)
+    print_ln("loss for batch: %s", loss.reveal())
+
+    #  gradients 
+    scale = sfix(2) / BATCH
+    d_logits = do_to_each(lambda z: z * scale, probs - y)
+
+    dW2 = h1.trans_mul(d_logits)
+    d_h1 = matmul(d_logits, W2.transpose())
+    d_h1 = do_pairwise(lambda a, b: a * b, d_h1, drelu(h1))
+    dW1 = x.trans_mul(d_h1)
+
+    #  weight update (just SGD-ish) 
+    lr = sfix(0.01)
+    W1[:] = do_pairwise(lambda w, g: w - lr * g, W1, dW1)
+    W2[:] = do_pairwise(lambda w, g: w - lr * g, W2, dW2)
+
+print_ln("SecureNN legacy demo... all done")

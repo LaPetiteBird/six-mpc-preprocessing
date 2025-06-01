@@ -1,0 +1,67 @@
+from Compiler.types import sint, Matrix
+from Compiler.library import print_ln, for_range
+
+
+matrix_size = 32
+total_elements = 2 * matrix_size * matrix_size 
+
+# inputs 
+flat_input = sint.Array(total_elements)
+flat_input.input_from(0)
+
+X = Matrix(matrix_size, matrix_size, sint)
+Y = Matrix(matrix_size, matrix_size, sint)
+
+@for_range(matrix_size)
+def reconstruct_input(row):
+    @for_range(matrix_size)
+    def fill_columns(col):
+        X[row][col] = flat_input[row * matrix_size + col]
+        Y[row][col] = flat_input[matrix_size * matrix_size + row * matrix_size + col]
+
+# preprocessing
+A = Matrix(matrix_size, matrix_size, sint)
+B = Matrix(matrix_size, matrix_size, sint)
+C = Matrix(matrix_size, matrix_size, sint)
+
+@for_range(matrix_size)
+def sample_triple_rows(row):
+    @for_range(matrix_size)
+    def sample_columns(col):
+        A[row][col] = sint.get_random()
+        B[row][col] = sint.get_random()
+
+@for_range(matrix_size)
+def compute_C_matrix(row):
+    @for_range(matrix_size)
+    def compute_columns(col):
+        value = sint(0)
+        @for_range(matrix_size)
+        def multiply_and_sum(k):
+            nonlocal value
+            value += A[row][k] * B[k][col]
+        C[row][col] = value
+
+# online
+D = X - A
+E = Y - B
+D_open = D.reveal()
+E_open = E.reveal()
+
+Z = Matrix(matrix_size, matrix_size, sint)
+
+@for_range(matrix_size)
+def compute_Z_matrix(row):
+    @for_range(matrix_size)
+    def compute_columns(col):
+        result = sint(0)
+        @for_range(matrix_size)
+        def sum_triple_terms(k):
+            nonlocal result
+            result += D_open[row][k] * B[k][col]
+            result += A[row][k] * E_open[k][col]
+            result += D_open[row][k] * E_open[k][col]
+        Z[row][col] = C[row][col] + result
+
+#outout 
+print_ln("Z = X @ Y computed securely with simulated CKRRSW20 preprocessing.")

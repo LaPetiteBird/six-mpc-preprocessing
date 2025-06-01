@@ -1,0 +1,78 @@
+from Compiler.types import sfix, Matrix
+from Compiler.library import print_ln, for_range
+
+sfix.set_precision(16, 32)
+
+
+n = 40
+d = 10
+h = 8
+B = 40   # use full batch
+epochs = 2
+alpha = sfix(0.01)
+
+X = Matrix(n, d, sfix)
+Y = Matrix(n, 1, sfix)
+X.input_from(0)
+Y.input_from(0)
+
+def relu_approx(x):
+    return x * sfix(x > sfix(0))  
+
+W1 = Matrix(d, h, sfix)
+W2 = Matrix(h, 1, sfix)
+W1.assign_all(0)
+W2.assign_all(0)
+
+@for_range(epochs)
+def train(ep):
+    xb = X
+    yb = Y
+
+    z1 = xb * W1
+    a1 = Matrix(n, h, sfix)
+    @for_range(n)
+    def apply_relu1(i):
+        @for_range(h)
+        def inner1(j):
+            a1[i][j] = relu_approx(z1[i][j])
+
+    z2 = a1 * W2
+    yhat = Matrix(n, 1, sfix)
+    @for_range(n)
+    def apply_relu2(i):
+        yhat[i][0] = relu_approx(z2[i][0])
+
+    error = yhat - yb
+
+    grad2 = a1.transpose() * error
+    step2 = Matrix(h, 1, sfix)
+    scale = alpha / B
+    @for_range(h)
+    def update_w2(i):
+        step2[i][0] = grad2[i][0] * scale
+    W2.assign(W2 - step2)
+
+    WT2 = W2.transpose()
+    back = Matrix(n, h, sfix)
+    @for_range(n)
+    def b1(i):
+        @for_range(h)
+        def b2(j):
+            grad_val = error[i][0] * WT2[0][j]
+            dz = z1[i][j] > sfix(0)
+            back[i][j] = grad_val * sfix(dz)
+
+    grad1 = xb.transpose() * back
+    step1 = Matrix(d, h, sfix)
+    @for_range(d)
+    def s1(i):
+        @for_range(h)
+        def s2(j):
+            step1[i][j] = grad1[i][j] * scale
+    W1.assign(W1 - step1)
+
+print_ln("W1 (input → hidden):")
+W1.print_reveal_nested()
+print_ln("W2 (hidden → output):")
+W2.print_reveal_nested()
