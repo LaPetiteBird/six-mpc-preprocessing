@@ -29,7 +29,7 @@ def main():
     write_matrix("Player-Data/Input-P0-0", [A0])
     write_matrix("Player-Data/Input-P1-0", [B1])
 
-    print("✓ Wrote input matrices for A and B")
+    print("Wrote input matrices for A and B")
 
 if __name__ == "__main__":
     main()
