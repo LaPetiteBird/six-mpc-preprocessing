@@ -116,4 +116,4 @@ def training_step(not_used):
     W1[:] = do_pairwise(lambda w, g: w - lr * g, W1, dW1)
     W2[:] = do_pairwise(lambda w, g: w - lr * g, W2, dW2)
 
-print_ln("SecureNN legacy demo... all done")
+print_ln("SecureNN complete")

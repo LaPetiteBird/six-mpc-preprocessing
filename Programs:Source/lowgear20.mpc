@@ -1,7 +1,7 @@
 from Compiler.types import sfix
 from Compiler.library import print_ln, for_range
 
-# Matrix dimensions: A ∈ [ROWS × INNER], B ∈ [INNER × COLS]
+
 ROWS = 64
 INNER = 128
 COLS = 32
@@ -16,8 +16,8 @@ B.input_from(1)   # Party 1 inputs B
 # Compute matrix product
 C = A.dot(B)
 
-# Reveal the result (partial for sanity)
-print_ln("Secure matrix product (partial output)")
+# Reveal the result
+print_ln("Secure matrix product")
 @for_range(min(ROWS, 5))
 def show_rows(i):
     @for_range(min(COLS, 5))
